@@ -76,6 +76,27 @@ public class JavaTfIdf implements java.io.Serializable {
     return ngramCountRdd;
   }
 
+
+  /**
+   * Pairs ngrams with their inverse document frequencies across the entire corpus
+   * @param inputNgrams input RDD of lists of ngrams, where each list matches a single document
+   * @return a JavaPairRDD of ngrams paired with their IDF values
+   */
+  public JavaPairRDD<String, Double> getNgramIDFs(JavaRDD<List<String>> inputNgrams){
+
+    // generate an RDD containing the unique ngrams in the input lists
+    JavaRDD<String> ngrams = inputNgrams.flatMap(ngram_list -> {return ngram_list;}).distinct();
+
+    // append to each ngram the inverse document frequency of that ngram in inputNgrams
+    JavaPairRDD<String, Double> ngram_idfs = ngrams.mapToPair(ngram -> {
+      Long ngram_count = inputNgrams.filter(ngram_list -> {return ngram_list.contains(ngram);}).count();
+      Double idf = Math.log(inputNgrams.count()/ngram_count);
+      return new Tuple2<String, Double>(ngram, idf);
+    });
+
+    return ngram_idfs;
+  }
+
     // turn each tuple into an output Record with a "word" and "count" field
     // JavaRDD<SimpleRecord> outputRdd = wordCountRdd.map(wordCountTuple -> {
     //   SimpleRecord record = new SimpleRecord();
