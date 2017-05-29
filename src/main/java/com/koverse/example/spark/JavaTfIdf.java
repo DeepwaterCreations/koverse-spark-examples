@@ -10,6 +10,7 @@ import org.apache.spark.api.java.JavaRDD;
 import scala.Tuple2;
 
 import java.util.List;
+import java.util.HashMap;
 
 public class JavaTfIdf implements java.io.Serializable {
 
@@ -48,14 +49,32 @@ public class JavaTfIdf implements java.io.Serializable {
     return ngrams;
   }
 
-    // combine the lower casing of the string with generating the pairs.
-    // JavaPairRDD<String, Integer> ones = ngrams.mapToPair(word -> {
-    //   return new Tuple2<String, Integer>(word.toLowerCase().trim(), 1);
-    // });
+  /**
+   * Pairs ngrams with their term frequencies weighted by document length
+   * @param inputNgrams input RDD of lists of ngrams, where each list matches a single document
+   * @return a JavaRDD of lists of ngrams paired with their TF values for the document represented by that list
+   */
+  public JavaRDD<List<Tuple2<String, Integer>>> getNgramTFs(JavaRDD<List<String>> inputNgrams){
+    // sum up the counts for each ngram and divide by document length
+    JavaRDD<List<Tuple2<String, Integer>>> ngramCountRdd = inputNgrams.map(ngram_list -> {
+      // count terms by incrementing values in a hashmap
+      HashMap<String, Integer> count_map = new HashMap<String, Integer>();
+      for(String ngram : ngram_list){
+        int count = count_map.getOrDefault(ngram, 0) + 1;
+        count_map.put(ngram, count);
+      } 
 
-    // sum up the counts for each word
-    // JavaPairRDD<String, Integer> wordCountRdd = ones
-    //     .reduceByKey((count, amount) -> count + amount);
+      // compile list of terms and pair them with counts
+      int terms_in_document = ngram_list.size();
+      List<Tuple2<String, Integer>> pairs = Lists.newArrayList();
+      for(HashMap.Entry<String, Integer> pair : count_map.entrySet()){
+        pairs.add(new Tuple2<String, Integer>(pair.getKey(), pair.getValue() / terms_in_document)); 
+      }
+      return pairs;
+    });
+
+    return ngramCountRdd;
+  }
 
     // turn each tuple into an output Record with a "word" and "count" field
     // JavaRDD<SimpleRecord> outputRdd = wordCountRdd.map(wordCountTuple -> {
