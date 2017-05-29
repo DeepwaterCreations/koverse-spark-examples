@@ -16,20 +16,20 @@ public class JavaTfIdf implements java.io.Serializable {
   private static final long serialVersionUID = 8741666028339586272L;
   private final String textFieldName;
   private final String tokenizationString;
+  private final Integer n;
   
-  public JavaTfIdf(String textFieldName, String tokenizationString) {
+  public JavaTfIdf(String textFieldName, String tokenizationString, Integer n) {
     this.textFieldName = textFieldName;
     this.tokenizationString = tokenizationString;
+    this.n = n;
   }
 
   /**
    * Divides text records into lists of n adjacent words
    * @param inputRecordsRdd input RDD of SimpleRecords
-   * @param n size of n-grams 
    * @return a JavaRDD of lists of n-grams from the input records
    */
-  public JavaRDD<List<String>> getNgrams(JavaRDD<SimpleRecord> inputRecordsRdd, int n) {
-
+  public JavaRDD<List<String>> getNgrams(JavaRDD<SimpleRecord> inputRecordsRdd) {
     // split the text in the records into lowercase words
     JavaRDD<List<String>> words = inputRecordsRdd.map(record -> {
       return Lists.newArrayList(record.get(textFieldName).toString().toLowerCase()
