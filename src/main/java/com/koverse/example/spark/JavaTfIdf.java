@@ -76,7 +76,6 @@ public class JavaTfIdf implements java.io.Serializable {
     return ngramCountRdd;
   }
 
-
   /**
    * Pairs ngrams with their inverse document frequencies across the entire corpus
    * @param inputNgrams input RDD of lists of ngrams, where each list matches a single document
