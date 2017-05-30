@@ -97,16 +97,33 @@ public class JavaTfIdf implements java.io.Serializable {
     return ngram_idfs;
   }
 
-    // turn each tuple into an output Record with a "word" and "count" field
-    // JavaRDD<SimpleRecord> outputRdd = wordCountRdd.map(wordCountTuple -> {
-    //   SimpleRecord record = new SimpleRecord();
-    //   record.put("word", wordCountTuple._1);
-    //   record.put("count", wordCountTuple._2);
-    //   return record;
-    // });
+  /**
+   * Gets TF and IDF values for ngrams, multiplies them together, and puts them into a SimpleRecord
+   * @param inputRecordsRdd input RDD of SimpleRecords
+   * @return a JavaRDD of SimpleRecords that have "ngram" and "tfidf" fields in each record
+   */
+  public JavaRDD<SimpleRecord> getTfIdfs(JavaRDD<SimpleRecord> inputRecordsRdd){
+    // get values via other functions
+    JavaRDD<List<String>> ngram_lists = getNgrams(inputRecordsRdd);
+    JavaRDD<List<Tuple2<String, Integer>>> ngramTFs = getNgramTFs(ngram_lists);
+    JavaPairRDD<String, Double> ngramIDFs = getNgramIDFs(ngram_lists);
 
-    // return outputRdd;
-    // return inputRecordsRdd;
+    // combine tfs and idfs into a SimpleRecord RDD
+    JavaRDD<SimpleRecord> ngramTfIdfs = ngramTFs.flatMap(ngram_list -> {
+      List<SimpleRecord> output = Lists.newArrayList();
+      for(Tuple2<String, Integer> tfpair : ngram_list){
+        SimpleRecord record = new SimpleRecord();
+        String ngram = tfpair._1;
+        Integer tf = tfpair._2;
+        Double idf = ngramIDFs.lookup(ngram).get(0);
+        Double tfidf = tf * idf;
+        record.put("ngram", ngram);
+        record.put("tfidf", tfidf);
+        output.add(record);
+      }
+      return output;
+    }); 
 
-  // }
+    return ngramTfIdfs;
+  }
 }
