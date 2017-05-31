@@ -11,6 +11,7 @@ import scala.Tuple2;
 
 import java.util.List;
 import java.util.HashMap;
+import java.util.Map;
 
 public class JavaTfIdf implements java.io.Serializable {
 
@@ -120,7 +121,7 @@ public class JavaTfIdf implements java.io.Serializable {
     // get values via other functions
     JavaRDD<List<String>> ngramLists = getNgrams(inputRecordsRdd);
     JavaRDD<List<Tuple2<String, Integer>>> ngramTFs = getNgramTFs(ngramLists);
-    JavaPairRDD<String, Double> ngramIDFs = getNgramIDFs(ngram_lists);
+    Map<String, Double> ngramIdfs = getNgramIdfs(ngramLists).collectAsMap();
 
     // combine tfs and idfs into a SimpleRecord RDD
     JavaRDD<SimpleRecord> ngramTfIdfs = ngramTFs.flatMap(ngramList -> {
@@ -129,7 +130,7 @@ public class JavaTfIdf implements java.io.Serializable {
         SimpleRecord record = new SimpleRecord();
         String ngram = tfpair._1;
         Integer tf = tfpair._2;
-        Double idf = ngramIdfs.lookup(ngram).get(0);
+        Double idf = ngramIdfs.get(ngram);
         Double tfidf = tf * idf;
         record.put("ngram", ngram);
         record.put("tfidf", tfidf);
