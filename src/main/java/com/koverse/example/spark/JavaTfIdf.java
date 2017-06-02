@@ -51,7 +51,7 @@ public class JavaTfIdf implements java.io.Serializable {
       ArrayList<String> document = new ArrayList<String>(Arrays.asList(words));
       // Parse ngrams out of list of strings
       List<Tuple2<Long, String>> pairs = Lists.newArrayList();
-      for (int i = 0; i < (document.size() - ngramSize); i++) {
+      for (int i = 0; i <= (document.size() - ngramSize); i++) {
         String ngram = String.join(" ", document.subList(i, i + ngramSize));
         pairs.add(new Tuple2<Long, String>(id, ngram));
       }
