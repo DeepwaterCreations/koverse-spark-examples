@@ -63,31 +63,38 @@ public class JavaTfIdf implements java.io.Serializable {
 
   /**
    * Pairs ngrams with their term frequencies weighted by document length.
-   * @param inputNgrams input RDD of lists of ngrams, where each list 
-   *     matches a single document
-   * @return a JavaRDD of lists of ngrams paired with their TF values for the 
-   *     document represented by that list
+   * @param inputNgrams input JavaPairRDD of labeled ngrams
+   * @return a JavaPairRDD of document id+ngram terms paired with their tf values
    */
-  public JavaRDD<List<Tuple2<String, Integer>>> getNgramTFs(JavaRDD<List<String>> inputNgrams) {
-    // sum up the counts for each ngram and divide by document length
-    JavaRDD<List<Tuple2<String, Integer>>> ngramCountRdd = inputNgrams.map(ngramList -> {
-      // count terms by incrementing values in a hashmap
-      HashMap<String, Integer> countMap = new HashMap<String, Integer>();
-      for (String ngram : ngramList) {
-        int count = countMap.getOrDefault(ngram, 0) + 1;
-        countMap.put(ngram, count);
-      } 
+  public JavaPairRDD<Tuple2<Long, String>, Double> getTFs(JavaPairRDD<Long, String> inputNgrams) {
+    // get the number of terms in each document
+    Map<Long, Object> documentLengths = inputNgrams.countByKey();
 
-      // compile list of terms and pair them with counts
-      int termsInDocument = ngramList.size();
-      List<Tuple2<String, Integer>> pairs = Lists.newArrayList();
-      for (HashMap.Entry<String, Integer> pair : countMap.entrySet()) {
-        pairs.add(new Tuple2<String, Integer>(pair.getKey(), pair.getValue() / termsInDocument)); 
-      }
-      return pairs;
-    });
+    JavaPairRDD<Tuple2<Long, String>, Double> ngramCounts = inputNgrams
+        .groupByKey()
+        .flatMapToPair(document -> {
+          Long id = document._1;
+          Iterable<String> ngramList = document._2;
+          // count terms per document by incrementing values in a hashmap
+          HashMap<String, Integer> countMap = new HashMap<String, Integer>();
+          for (String ngram : ngramList) {
+            int count = countMap.getOrDefault(ngram, 0) + 1;
+            countMap.put(ngram, count);
+          } 
 
-    return ngramCountRdd;
+          // compile list of terms and pair them with counts divided by document lengths
+          // int termsInDocument = ngramList.size();
+          long termsInDocument = (long)documentLengths.get(id);
+          List<Tuple2<Tuple2<Long, String>, Double>> pairs = Lists.newArrayList();
+          for (HashMap.Entry<String, Integer> pair : countMap.entrySet()) {
+            Tuple2<Long, String> term = new Tuple2<Long, String>(id, pair.getKey());
+            double tf = pair.getValue() / (double)termsInDocument;
+            pairs.add(new Tuple2<Tuple2<Long, String>, Double>(term, tf)); 
+          }
+          return pairs;
+        });
+
+    return ngramCounts;
   }
 
   /**
