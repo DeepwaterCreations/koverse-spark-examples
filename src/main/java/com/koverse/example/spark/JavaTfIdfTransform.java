@@ -58,7 +58,7 @@ public class JavaTfIdfTransform extends JavaSparkTransform {
     // for each Record, tokenize the specified text field and count each occurrence
     final String fieldName = context.getParameters().get(TEXT_FIELD_NAME_PARAMETER);
     final Integer ngramSize = Integer.parseInt(context.getParameters().get(NGRAM_SIZE_PARAMETER));
-    final JavaTfIdf tfidf = new JavaTfIdf(fieldName, "['\".?!,:;\\s]", ngramSize);
+    final JavaTfIdf tfidf = new JavaTfIdf(fieldName, "['\".?!,:;\\s]+", ngramSize);
     
     return tfidf.getTfIdfs(inputRecordsRdd);
   }
