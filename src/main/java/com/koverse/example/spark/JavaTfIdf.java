@@ -112,8 +112,7 @@ public class JavaTfIdf implements java.io.Serializable {
     JavaPairRDD<String, Long> reverseInputNgrams = inputNgrams.mapToPair(pair -> {
       return new Tuple2<String, Long>(pair._2, pair._1);
     });
-    Map<String, Object> ngramDocCounts = reverseInputNgrams.countByKey();
-
+    Map<String, Object> ngramDocCounts = reverseInputNgrams.distinct().countByKey();
 
     // append to each ngram the inverse document frequency of that ngram in 
     // inputNgrams
