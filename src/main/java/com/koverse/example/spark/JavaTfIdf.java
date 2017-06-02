@@ -129,7 +129,7 @@ public class JavaTfIdf implements java.io.Serializable {
   /**
    * Gets TF and IDF values for ngrams, multiplies them together, and puts them into a SimpleRecord.
    * @param inputRecordsRdd input RDD of SimpleRecords
-   * @return a JavaRDD of SimpleRecords that have "document_id", "ngram" and "tfidf" fields in each record
+   * @return a JavaRDD of SimpleRecords with "document_id", "ngram" and "tfidf" fields
    */
   public JavaRDD<SimpleRecord> getTfIdfs(JavaRDD<SimpleRecord> inputRecordsRdd) {
     // get values via other functions
