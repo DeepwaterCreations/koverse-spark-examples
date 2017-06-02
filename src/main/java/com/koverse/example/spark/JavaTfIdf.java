@@ -106,7 +106,7 @@ public class JavaTfIdf implements java.io.Serializable {
 
     // generate an RDD containing the unique ngrams in the input lists
     JavaRDD<String> ngrams = inputNgrams.values().distinct();
-    long totalNgramCount = ngrams.count();
+    long totalDocumentCount = inputNgrams.keys().distinct().count();
 
     // generate a map containing the ngrams paired with their document counts
     JavaPairRDD<String, Long> reverseInputNgrams = inputNgrams.mapToPair(pair -> {
@@ -119,7 +119,7 @@ public class JavaTfIdf implements java.io.Serializable {
     // inputNgrams
     JavaPairRDD<String, Double> ngramIdfs = ngrams.mapToPair(ngram -> {
       long ngramCount = (long)ngramDocCounts.get(ngram);
-      Double idf = Math.log(totalNgramCount / ngramCount);
+      Double idf = Math.log((double)totalDocumentCount / (double)ngramCount);
       return new Tuple2<String, Double>(ngram, idf);
     });
 
