@@ -9,7 +9,9 @@ import org.apache.spark.api.java.JavaRDD;
 
 import scala.Tuple2;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,24 +35,27 @@ public class JavaTfIdf implements java.io.Serializable {
   }
 
   /**
-   * Divides text records into lists of n adjacent words.
+   * Divides text records into strings of n adjacent words, labeled by document.
    * @param inputRecordsRdd input RDD of SimpleRecords
-   * @return a JavaRDD of lists of n-grams from the input records
+   * @return a JavaPairRDD of n-grams from the input records keyed by document id
    */
-  public JavaRDD<List<String>> getNgrams(JavaRDD<SimpleRecord> inputRecordsRdd) {
-    // split the text in the records into lowercase words
-    JavaRDD<List<String>> words = inputRecordsRdd.map(record -> {
-      return Lists.newArrayList(record.get(textFieldName).toString().toLowerCase()
-          .split(tokenizationString));
-    });
+  public JavaPairRDD<Long, String> getNgrams(JavaRDD<SimpleRecord> inputRecordsRdd) {
+    // add document ids to records
+    JavaPairRDD<SimpleRecord, Long> inputRecordsWithIds = inputRecordsRdd.zipWithIndex();
 
-    // divide lists of words into ngrams
-    JavaRDD<List<String>> ngrams = words.map(line -> {
-      List<String> ngramList = Lists.newArrayList();
-      for (int i = 0; i < (line.size() - ngramSize); i++) {
-        ngramList.add(String.join(" ", line.subList(i, i + ngramSize))); 
+    JavaPairRDD<Long, String> ngrams = inputRecordsWithIds.flatMapToPair(recordPair -> {
+      SimpleRecord record = recordPair._1;
+      Long id = recordPair._2;
+      // Split document string to words and make lowercase
+      String[] words = record.get(textFieldName).toString().toLowerCase().split(tokenizationString);
+      ArrayList<String> document = new ArrayList<String>(Arrays.asList(words));
+      // Parse ngrams out of list of strings
+      List<Tuple2<Long, String>> pairs = Lists.newArrayList();
+      for (int i = 0; i < (document.size() - ngramSize); i++) {
+        String ngram = String.join(" ", document.subList(i, i + ngramSize));
+        pairs.add(new Tuple2<Long, String>(id, ngram));
       }
-      return Lists.newArrayList(ngramList);
+      return pairs;
     });
 
     return ngrams;
