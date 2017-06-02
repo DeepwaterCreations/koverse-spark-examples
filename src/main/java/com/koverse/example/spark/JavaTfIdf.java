@@ -129,28 +129,32 @@ public class JavaTfIdf implements java.io.Serializable {
   /**
    * Gets TF and IDF values for ngrams, multiplies them together, and puts them into a SimpleRecord.
    * @param inputRecordsRdd input RDD of SimpleRecords
-   * @return a JavaRDD of SimpleRecords that have "ngram" and "tfidf" fields in each record
+   * @return a JavaRDD of SimpleRecords that have "document_id", "ngram" and "tfidf" fields in each record
    */
   public JavaRDD<SimpleRecord> getTfIdfs(JavaRDD<SimpleRecord> inputRecordsRdd) {
     // get values via other functions
-    JavaRDD<List<String>> ngramLists = getNgrams(inputRecordsRdd);
-    JavaRDD<List<Tuple2<String, Integer>>> ngramTFs = getNgramTFs(ngramLists);
-    Map<String, Double> ngramIdfs = getNgramIdfs(ngramLists).collectAsMap();
+    JavaPairRDD<Long, String> ngrams = getNgrams(inputRecordsRdd);
+    JavaPairRDD<Tuple2<Long, String>, Double> ngramTFs = getTFs(ngrams);
+    Map<String, Double> ngramIdfs = getIdfs(ngrams).collectAsMap();
 
     // combine tfs and idfs into a SimpleRecord RDD
-    JavaRDD<SimpleRecord> ngramTfIdfs = ngramTFs.flatMap(ngramList -> {
-      List<SimpleRecord> output = Lists.newArrayList();
-      for (Tuple2<String, Integer> tfpair : ngramList) {
-        SimpleRecord record = new SimpleRecord();
-        String ngram = tfpair._1;
-        Integer tf = tfpair._2;
-        Double idf = ngramIdfs.get(ngram);
-        Double tfidf = tf * idf;
-        record.put("ngram", ngram);
-        record.put("tfidf", tfidf);
-        output.add(record);
-      }
-      return output;
+    JavaRDD<SimpleRecord> ngramTfIdfs = ngramTFs.map(ngramPair -> {
+      // consolidate information
+      Tuple2<Long, String> document = ngramPair._1;
+      Long id = document._1;
+      String ngram = document._2;
+      Double tf = ngramPair._2;
+      Double idf = ngramIdfs.get(ngram);
+
+      // calculate tfidf
+      Double tfidf = tf * idf;
+
+      // build record
+      SimpleRecord record = new SimpleRecord();
+      record.put("document_id", id);
+      record.put("ngram", ngram);
+      record.put("tfidf", tfidf);
+      return record;
     }); 
 
     return ngramTfIdfs;
