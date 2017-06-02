@@ -29,7 +29,7 @@ public class JavaTfIdfTest  extends SharedJavaSparkContext {
     SimpleRecord record3 = new SimpleRecord();
     record0.put("text", "these words are to be counted");
     record0.put("id", 0);
-    record1.put("text", "more words that are worth counting");
+    record1.put("text", "more words  that are worth counting");
     record1.put("id", 1);
     record2.put("text", "this three gram this three gram this three gram this three gram");
     record2.put("id", 2);
@@ -40,8 +40,8 @@ public class JavaTfIdfTest  extends SharedJavaSparkContext {
     JavaRDD<SimpleRecord> inputRecordsRdd = jsc().parallelize(Lists.newArrayList(record0, record1, record2, record3));
     
     // Create tests for 2-grams and 3-grams
-    JavaTfIdf tfidf2gram = new JavaTfIdf("text", "['\".?!,:;\\s]", 2);
-    JavaTfIdf tfidf3gram = new JavaTfIdf("text", "['\".?!,:;\\s]", 3);
+    JavaTfIdf tfidf2gram = new JavaTfIdf("text", "['\".?!,:;\\s]+", 2);
+    JavaTfIdf tfidf3gram = new JavaTfIdf("text", "['\".?!,:;\\s]+", 3);
 
     // Test 2gram ngrams
     // Should return rows for all of the (non-unique) ngrams in the input text
