@@ -99,25 +99,27 @@ public class JavaTfIdf implements java.io.Serializable {
 
   /**
    * Pairs ngrams with their inverse document frequencies across the entire corpus.
-   * @param inputNgrams input RDD of lists of ngrams, where each list matches a single document
+   * @param inputNgrams input JavaPairRDD of document ids paired to ngrams
    * @return a JavaPairRDD of ngrams paired with their IDF values
    */
-  public JavaPairRDD<String, Double> getNgramIdfs(JavaRDD<List<String>> inputNgrams) {
+  public JavaPairRDD<String, Double> getIdfs(JavaPairRDD<Long, String> inputNgrams) {
 
     // generate an RDD containing the unique ngrams in the input lists
-    JavaRDD<String> ngrams = inputNgrams.flatMap(ngramList -> { 
-      return ngramList; 
-    })
-        .distinct();
+    JavaRDD<String> ngrams = inputNgrams.values().distinct();
+    long totalNgramCount = ngrams.count();
+
+    // generate a map containing the ngrams paired with their document counts
+    JavaPairRDD<String, Long> reverseInputNgrams = inputNgrams.mapToPair(pair -> {
+      return new Tuple2<String, Long>(pair._2, pair._1);
+    });
+    Map<String, Object> ngramDocCounts = reverseInputNgrams.countByKey();
+
 
     // append to each ngram the inverse document frequency of that ngram in 
     // inputNgrams
     JavaPairRDD<String, Double> ngramIdfs = ngrams.mapToPair(ngram -> {
-      Long ngramCount = inputNgrams.filter(ngramList -> {
-        return ngramList.contains(ngram);
-      })
-          .count();
-      Double idf = Math.log(inputNgrams.count() / ngramCount);
+      long ngramCount = (long)ngramDocCounts.get(ngram);
+      Double idf = Math.log(totalNgramCount / ngramCount);
       return new Tuple2<String, Double>(ngram, idf);
     });
 
